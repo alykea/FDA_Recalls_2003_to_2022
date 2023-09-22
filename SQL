@@ -1,0 +1,93 @@
+-- 1. NATIONWIDE NUMBERS: TOTAL AFFECTED, TOTAL DEATHS, AND DEATH PERCENTAGE
+
+SELECT
+	(SUM(e.num_affected) + SUM(n.num_affected)) AS total_affected,
+	SUM(CASE
+	WHEN n.outcomes LIKE '%death%'
+	THEN n.num_affected
+	END) +
+	SUM(CASE
+	WHEN e.outcomes LIKE '%death%'
+	THEN e.num_affected
+	END) AS total_deaths,
+	ROUND((SUM(CASE
+	WHEN n.outcomes LIKE '%death%'
+	THEN n.num_affected
+	END) +
+	SUM(CASE
+	WHEN e.outcomes LIKE '%death%'
+	THEN e.num_affected
+	END)) / (SUM(e.num_affected) + SUM(n.num_affected))*100,2) AS death_percentage
+FROM PortfolioProjectFDA..Exemption4 e
+FULL JOIN PortfolioProjectFDA..NotExemption4 n
+	ON e.products_brand_name = n.products_brand_name
+
+
+
+-- 2. TOTAL DEATHS PER EXEMPTION 4
+
+SELECT
+	products_brand_name,
+	products_industry_name,
+	SUM(num_affected) as num_deaths
+FROM PortfolioProjectFDA..Exemption4
+WHERE outcomes LIKE '%death%'
+GROUP BY products_brand_name, products_industry_name
+ORDER BY num_deaths DESC;
+
+-- 3. TOTAL DEATHS PER NON-EXEMPTION 4
+
+SELECT
+	SUM(num_affected) AS total_notexemption_deaths
+FROM PortfolioProjectFDA..NotExemption4
+WHERE outcomes LIKE '%death%'
+
+
+-- 4. DEATHS PER INDUSTRY: EXEMPTION 4
+
+SELECT
+	products_industry_name,
+	SUM(num_affected) as num_deaths
+FROM PortfolioProjectFDA..Exemption4
+WHERE outcomes LIKE '%death%'
+GROUP BY products_industry_name
+ORDER BY num_deaths DESC;
+
+
+-- 5. DEATHS PER INDUSTRY: NON-EXEMPTION 4
+
+SELECT
+	products_industry_name,
+	SUM(num_affected) AS num_deaths
+FROM PortfolioProjectFDA..NotExemption4
+WHERE outcomes LIKE '%death%'
+GROUP BY products_industry_name
+	HAVING SUM(num_affected) > 3
+ORDER BY num_deaths DESC;
+
+
+-- 6. TOTAL AFFECTED PER DATE IN TOP 3 CATEGORIES: EXEMPTION 4
+
+SELECT
+	TRY_CONVERT(DATE, date_created) AS date,
+	products_industry_name,
+	SUM(num_affected) AS total_affected
+FROM PortfolioProjectFDA..Exemption4
+WHERE products_industry_name LIKE 'Cosmetics'
+	OR products_industry_name LIKE 'Vit%'
+	OR products_industry_name LIKE 'Dietary%'
+GROUP BY date_created, products_industry_name
+ORDER BY date DESC;
+
+-- 7. TOTAL AFFECTED PER DATE IN TOP 3 CATEGORIES: NON-EXEMPTION 4
+
+SELECT
+	TRY_CONVERT(DATE, date_created) AS date,
+	products_industry_name,
+	SUM(num_affected) AS total_affected
+FROM PortfolioProjectFDA..NotExemption4
+WHERE products_industry_name LIKE 'Cosmetics'
+	OR products_industry_name LIKE 'Vit%'
+	OR products_industry_name LIKE 'Dietary%'
+GROUP BY date_created, products_industry_name
+ORDER BY date DESC;
